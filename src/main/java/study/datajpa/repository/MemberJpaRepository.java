@@ -14,7 +14,7 @@ import java.util.Optional;
  * Github : http://github.com/frenchLineCigar
  */
 @Repository
-public class MemberJpaRepository {
+public class MemberJpaRepository { //순수 JPA 기반 리포지토리
 
     @PersistenceContext
     private EntityManager em;
@@ -23,8 +23,6 @@ public class MemberJpaRepository {
         em.persist(member);
         return member;
     }
-
-
 
     public void delete(Member member) {
         em.remove(member);
@@ -49,5 +47,10 @@ public class MemberJpaRepository {
         return em.find(Member.class, id);
     }
 
-
+    public List<Member> findByUsernameAndAgeGreaterThan(String username, int age) {
+        return em.createQuery("select m from Member m where m.username = :username and m.age > :age", Member.class)
+                .setParameter("username", username)
+                .setParameter("age", age)
+                .getResultList();
+    }
 }
