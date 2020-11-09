@@ -9,5 +9,5 @@ import study.datajpa.entity.Team;
  * Github : http://github.com/frenchLineCigar
  */
 
-public interface TeamRepository extends JpaRepository<Team, Long> { //엔티티 타입, 맵핑된 PK 타입
+public interface TeamRepository extends JpaRepository<Team, Long> { //엔티티 타입, 식별자(PK) 타입
 }
