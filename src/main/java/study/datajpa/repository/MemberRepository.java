@@ -9,5 +9,5 @@ import study.datajpa.entity.Member;
  * Github : http://github.com/frenchLineCigar
  */
 
-public interface MemberRepository extends JpaRepository<Member, Long> {
+public interface MemberRepository extends JpaRepository<Member, Long> { //엔티티 타입, 엔티티의 PK(@Id)에 맵핑된 타입
 }
