@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -15,6 +16,7 @@ import study.datajpa.dto.MemberDto;
 import study.datajpa.entity.Member;
 import study.datajpa.entity.Team;
 
+import javax.persistence.NonUniqueResultException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -288,15 +290,19 @@ class MemberRepositoryTest {
         memberRepository.save(m1);
         memberRepository.save(m2);
 
-        Optional<Member> findMember = memberRepository.findOptionalMemberByUsername("AAA"); //NonUniqueResultException(JPA) -> IncorrectResultSizeDataAccessException(Spring)
-        System.out.println("findMember = " + findMember);
+
+        Assertions.assertThrows(IncorrectResultSizeDataAccessException.class, () -> {
+            Optional<Member> findMember = memberRepository.findOptionalMemberByUsername("AAA"); //NonUniqueResultException(JPA) -> IncorrectResultSizeDataAccessException(Spring)
+            System.out.println("findMember = " + findMember);
+        });
+
         /**
-         * 단건 조회 인데 결과가 2개 이상인 경우, 예외가 발생
+         * 단건 조회 인데 결과가 2개 이상인 경우, 예외가 발생한다. 이때 발생한 JPA 예외는 Spring 예외로 변환돼 반환된다.
          * ````
          * Caused by: javax.persistence.NonUniqueResultException: query did not return a unique result: 2
          * -> org.springframework.dao.IncorrectResultSizeDataAccessException: query did not return a unique result: 2;
          * ````
-         * NonUniqueResultException이 터지면 Spring Data JPA는 이 jpa 예외를
+         * 참고: NonUniqueResultException이 터지면 Spring Data JPA는 이 jpa 예외를
          * IncorrectResultSizeDataAccessException 라는 springframework 예외로 변환 후 반환해준다.
          * 왜냐하면 Repository의 기술은 JPA가 될 수도 있고, MongoDB가 될 수도 있고, 다른 기술이 될 수도 있을 것이다.
          * 이를 사용하는 Service 계층의 클라이언트 코드들은 JPA에 의존하는 것이 아니라, 스프링이 추상화한 예외에 의존하면
