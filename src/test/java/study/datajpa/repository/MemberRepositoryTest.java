@@ -1,5 +1,6 @@
 package study.datajpa.repository;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -9,14 +10,18 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import study.datajpa.dto.MemberDto;
 import study.datajpa.entity.Member;
 import study.datajpa.entity.Team;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 /**
  * Created by frenchline707@gmail.com on 2020-11-08
@@ -221,6 +226,102 @@ class MemberRepositoryTest {
             System.out.println("member = " + member);
         }
     }
+
+    @Test
+    public void returnType() {
+        Member m1 = new Member("AAA", 10);
+        Member m2 = new Member("BBB", 20);
+        memberRepository.save(m1);
+        memberRepository.save(m2);
+
+//        List<Member> aaa = memberRepository.findListByUsername("AAA"); //컬렉션
+//        Member aaa = memberRepository.findMemberByUsername("AAA"); //단건
+        Optional<Member> aaa = memberRepository.findOptionalMemberByUsername("AAA");//단건 Optional
+        System.out.println("aaa = " + aaa.orElseThrow(IllegalStateException::new));
+//        System.out.println("aaa = " + aaa.orElseThrow(() -> new NoSuchElementException("No value present")));
+    }
+
+    @Test
+    public void returnTypeCollection() {
+        Member m1 = new Member("AAA", 10);
+        Member m2 = new Member("BBB", 20);
+        memberRepository.save(m1);
+        memberRepository.save(m2);
+        
+        // 주의: 컬렉션 조회 시, 파라미터를 이상하게 넣어서 데이터가 없을 수 있는 경우가 있는데, 이때 result는 null이 아니다.
+        // 비어 있는 컬렉션(empty collection)을 반환한다.
+        // List는 무조건 그냥 받으면 된다. 절대 null이 아닌 것이 보장된다.
+        List<Member> result = memberRepository.findListByUsername("asdfasdf"); //컬렉션
+        System.out.println("result = " + result); //result = []
+        System.out.println("result.size() = " + result.size()); //result.size() = 0
+    }
+
+    @Test
+    public void returnTypeSingle() {
+        Member m1 = new Member("AAA", 10);
+        Member m2 = new Member("BBB", 20);
+        memberRepository.save(m1);
+        memberRepository.save(m2);
+
+        // 주의: 단건 조회 시, 결과가 없는 경우 findMember는 null이다.
+        Member findMember = memberRepository.findMemberByUsername("asdfasdf");//단건
+        System.out.println("findMember = " + findMember);
+    }
+
+    @Test
+    public void returnTypeSingleOptional() {
+        Member m1 = new Member("AAA", 10);
+        Member m2 = new Member("BBB", 20);
+        memberRepository.save(m1);
+        memberRepository.save(m2);
+
+        // Java 8 이후, 조회 데이터가 있을 지 없을 지 모르면 Optional을 써라
+        // null이면 Optional.empty 로 반환
+        Optional<Member> findMember = memberRepository.findOptionalMemberByUsername("asdfasdf");//단건 Optional
+        System.out.println("findMember = " + findMember); //findMember = Optional.empty
+    }
+
+    @Test
+    public void returnTypeSingleDuplicate() {
+        Member m1 = new Member("AAA", 10);
+        Member m2 = new Member("AAA", 20);
+        memberRepository.save(m1);
+        memberRepository.save(m2);
+
+        Optional<Member> findMember = memberRepository.findOptionalMemberByUsername("AAA"); //NonUniqueResultException(JPA) -> IncorrectResultSizeDataAccessException(Spring)
+        System.out.println("findMember = " + findMember);
+        /**
+         * 단건 조회 인데 결과가 2개 이상인 경우, 예외가 발생
+         * ````
+         * Caused by: javax.persistence.NonUniqueResultException: query did not return a unique result: 2
+         * -> org.springframework.dao.IncorrectResultSizeDataAccessException: query did not return a unique result: 2;
+         * ````
+         * NonUniqueResultException이 터지면 Spring Data JPA는 이 jpa 예외를
+         * IncorrectResultSizeDataAccessException 라는 springframework 예외로 변환 후 반환해준다.
+         * 왜냐하면 Repository의 기술은 JPA가 될 수도 있고, MongoDB가 될 수도 있고, 다른 기술이 될 수도 있을 것이다.
+         * 이를 사용하는 Service 계층의 클라이언트 코드들은 JPA에 의존하는 것이 아니라, 스프링이 추상화한 예외에 의존하면
+         * 하부의 Repository 기술을 JPA에서 MongoDB나 아니면 다른 JDBC 기술로 바꿔도, 스프링은 동일한 스펙의 예외를 내려준다.
+         * 따라서 이를 사용하는 클라이언트 코드들을 바꿀 필요가 없다. 그래서 스프링이 예외를 한번 변환을 해서 반환을 해준다.
+         */
+    }
+
+    @Test
+    public void returnTypeException() throws Exception {
+        Member m1 = new Member("AAA", 10);
+        Member m2 = new Member("BBB", 20);
+        memberRepository.save(m1);
+        memberRepository.save(m2);
+
+        Optional<Member> findMember = memberRepository.findOptionalMemberByUsername("CCC");//단건 Optional
+        System.out.println("findMember = " + findMember); //findMember = Optional.empty
+
+        Assertions.assertThrows(IllegalStateException.class, () -> {
+            System.out.println("findMember = " + findMember.orElseThrow(() -> new IllegalStateException("입력하신 이름의 회원은 존재하지 않습니다.")));
+//            System.out.println("findMember = " + findMember.orElseThrow(IllegalStateException::new));
+//            System.out.println("findMember = " + findMember.orElseThrow(() -> new NoSuchElementException("No value present")));
+        });
+    }
+
 
 
     @Test

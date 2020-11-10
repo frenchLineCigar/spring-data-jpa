@@ -12,6 +12,7 @@ import study.datajpa.entity.Member;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Created by frenchline707@gmail.com on 2020-11-08
@@ -53,6 +54,14 @@ public interface MemberRepository extends JpaRepository<Member, Long> { //엔티
 
     List<Member> findByUsernameIn(List<String> names); //메소드 이름 쿼리로 IN절 조회
 
+    List<Member> findListByUsername(String username); //컬렉션
+    Member findMemberByUsername(String username); //단건
+    Optional<Member> findOptionalMemberByUsername(String username); //단건 Optional
+
+
+
+
+    //==기타 연습 과제==//
     long countMemberByUsernameStartingWith(String startingWith); //parameter bound with appended %
     long countMemberByUsernameEndingWith(String endingWith); //parameter bound with prepended %
     long countMemberByUsernameContaining(String containing); //parameter bound wrapped in %
