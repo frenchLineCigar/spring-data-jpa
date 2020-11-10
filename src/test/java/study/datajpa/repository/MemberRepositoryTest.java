@@ -290,7 +290,6 @@ class MemberRepositoryTest {
         memberRepository.save(m1);
         memberRepository.save(m2);
 
-
         Assertions.assertThrows(IncorrectResultSizeDataAccessException.class, () -> {
             Optional<Member> findMember = memberRepository.findOptionalMemberByUsername("AAA"); //NonUniqueResultException(JPA) -> IncorrectResultSizeDataAccessException(Spring)
             System.out.println("findMember = " + findMember);

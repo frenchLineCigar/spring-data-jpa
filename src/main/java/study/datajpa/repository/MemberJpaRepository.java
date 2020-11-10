@@ -61,4 +61,25 @@ public class MemberJpaRepository { //순수 JPA 기반 리포지토리
                 .getResultList();
     }
 
+    /**
+     * 순수 JPA 페이징과 정렬
+     * * 검색 조건: 나이가 10살
+     * * 정렬 조건: 이름으로 내림차순(desc)
+     * * 페이징 조건: 첫 번째 페이지, 페이지당 보여줄 데이터는 3건
+     */
+    //페이징 하는데 필요한 컨텐츠를 offset, limit로 짤라서 가져오는 쿼리
+    public List<Member> findByPage(int age, int offset, int limit) {
+        return em.createQuery("select m from Member m where m.age = :age order by m.username desc", Member.class)
+                .setParameter("age", age)
+                .setFirstResult(offset) //몇번째 row부터 가져올 것인가
+                .setMaxResults(limit)  //몇 개를 가져올 것인가
+                .getResultList();
+    }
+    //페이지 계산 로직을 위한 totalCount를 가져오는 쿼리
+    public long totalCount(int age) {
+        return em.createQuery("select count(m) from Member m where m.age = :age", Long.class)
+                .setParameter("age", age)
+                .getSingleResult();
+    }
+
 }
