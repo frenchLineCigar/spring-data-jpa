@@ -7,6 +7,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import study.datajpa.dto.MemberDto;
 import study.datajpa.entity.Member;
 
 import java.util.List;
@@ -31,8 +32,14 @@ public interface MemberRepository extends JpaRepository<Member, Long> { //엔티
     @Query(name = "Member.findByUsername") //스프링 데이터 JPA는 이 애노테이션의 생략이 가능하다. 관례상 엔티티.메서드명으로 먼저 NamedQuery를 찾게 된다
     List<Member> findByUsername(@Param("username") String username); //Spring Data JPA NamedQuery
 
-    @Query("select m from Member m where m.username = :username and m.age = :age")
+    @Query("select m from Member m where m.username = :username and m.age = :age") //@Query, 리포지토리 메소드에 쿼리 정의
     List<Member> findUser(@Param("username") String username, @Param("age") int age);
+
+    @Query("select m.username from Member m") //특정값 조회
+    List<String> findUsernameList();
+
+    @Query("select new study.datajpa.dto.MemberDto(m.id, m.username, t.name) from Member m join m.team t") //DTO로 조회
+    List<MemberDto> findMemberDto();
 
     long countMemberByUsernameStartingWith(String startingWith); //parameter bound with appended %
     long countMemberByUsernameEndingWith(String endingWith); //parameter bound with prepended %
