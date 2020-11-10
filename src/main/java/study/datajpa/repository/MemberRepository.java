@@ -31,6 +31,9 @@ public interface MemberRepository extends JpaRepository<Member, Long> { //엔티
     @Query(name = "Member.findByUsername") //스프링 데이터 JPA는 이 애노테이션의 생략이 가능하다. 관례상 엔티티.메서드명으로 먼저 NamedQuery를 찾게 된다
     List<Member> findByUsername(@Param("username") String username); //Spring Data JPA NamedQuery
 
+    @Query("select m from Member m where m.username = :username and m.age = :age")
+    List<Member> findUser(@Param("username") String username, @Param("age") int age);
+
     long countMemberByUsernameStartingWith(String startingWith); //parameter bound with appended %
     long countMemberByUsernameEndingWith(String endingWith); //parameter bound with prepended %
     long countMemberByUsernameContaining(String containing); //parameter bound wrapped in %
