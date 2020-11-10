@@ -13,6 +13,7 @@ import study.datajpa.dto.MemberDto;
 import study.datajpa.entity.Member;
 import study.datajpa.entity.Team;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -167,6 +168,59 @@ class MemberRepositoryTest {
         }
     }
 
+    @Test
+    public void findMembersNamedParam() {
+        Member m1 = new Member("AAA", 10);
+        Member m2 = new Member("AAA", 20);
+        memberRepository.save(m1);
+        memberRepository.save(m2);
+
+        List<Member> result = memberRepository.findMembersNamedParam("AAA"); //이름 기반 파라미터 바인딩
+        for (Member member : result) {
+            System.out.println("member = " + member);
+        }
+    }
+
+    @Test
+    public void findMembersNumeratedParam() {
+        Member m1 = new Member("AAA", 10);
+        Member m2 = new Member("AAA", 20);
+        memberRepository.save(m1);
+        memberRepository.save(m2);
+
+        List<Member> result = memberRepository.findMembersNumeratedParam("AAA", 10); //위치 기반 파라미터 바인딩
+        for (Member member : result) {
+            System.out.println("member = " + member);
+        }
+    }
+
+    @Test
+    public void findByNames() {
+        Member m1 = new Member("AAA", 10);
+        Member m2 = new Member("BBB", 20);
+        memberRepository.save(m1);
+        memberRepository.save(m2);
+
+        //where member0_.username in ('AAA' , 'BBB')
+        List<Member> result = memberRepository.findByNames(Arrays.asList("AAA", "BBB")); //컬렉션 파라미터 바인딩
+        for (Member member : result) {
+            System.out.println("member = " + member);
+        }
+    }
+
+    @Test
+    public void findByUsernameIn() {
+        Member m1 = new Member("AAA", 10);
+        Member m2 = new Member("BBB", 20);
+        memberRepository.save(m1);
+        memberRepository.save(m2);
+
+        //where member0_.username in ('AAA' , 'BBB')
+        List<Member> result = memberRepository.findByUsernameIn(Arrays.asList("AAA", "BBB")); //메소드 이름 쿼리로 IN절 조회
+        for (Member member : result) {
+            System.out.println("member = " + member);
+        }
+    }
 
 
     @Test

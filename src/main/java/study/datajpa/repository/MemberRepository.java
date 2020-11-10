@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import study.datajpa.dto.MemberDto;
 import study.datajpa.entity.Member;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -40,6 +41,17 @@ public interface MemberRepository extends JpaRepository<Member, Long> { //엔티
 
     @Query("select new study.datajpa.dto.MemberDto(m.id, m.username, t.name) from Member m join m.team t") //DTO로 조회
     List<MemberDto> findMemberDto();
+
+    @Query("select m from Member m where m.username = :name") //이름 기반 파라미터 바인딩
+    List<Member> findMembersNamedParam(@Param("name") String username);
+
+    @Query("select m from Member m where m.username = ?1 and m.age = ?2") //위치 기반 파라미터 바인딩
+    List<Member> findMembersNumeratedParam(String username, int age);
+
+    @Query("select m from Member m where m.username in :names") //컬렉션 파라미터 바인딩
+    List<Member> findByNames(@Param("names") Collection<String> names);
+
+    List<Member> findByUsernameIn(List<String> names); //메소드 이름 쿼리로 IN절 조회
 
     long countMemberByUsernameStartingWith(String startingWith); //parameter bound with appended %
     long countMemberByUsernameEndingWith(String endingWith); //parameter bound with prepended %
