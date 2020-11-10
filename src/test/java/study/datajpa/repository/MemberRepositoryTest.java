@@ -115,6 +115,18 @@ class MemberRepositoryTest {
     }
 
     @Test
+    public void testNamedQuery() {
+        Member m1 = new Member("AAA", 10);
+        Member m2 = new Member("BBB", 20);
+        memberRepository.save(m1);
+        memberRepository.save(m2);
+        
+        List<Member> result = memberRepository.findByUsername("AAA"); //Spring Data JPA NamedQuery
+        Member findMember = result.get(0);
+        assertThat(findMember).isEqualTo(m1);
+    }
+
+    @Test
     public void countMemberByUsernameStartingWith() {
         Member m1 = new Member("김대리", 10);
         Member m2 = new Member("김사원", 20);

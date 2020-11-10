@@ -5,6 +5,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import study.datajpa.entity.Member;
 
 import java.util.List;
@@ -25,6 +27,9 @@ public interface MemberRepository extends JpaRepository<Member, Long> { //엔티
     List<Member> findHelloBy(); //findHelloBy 처럼 …에 식별하기 위한 내용(설명)이 들어가도 된다
 
     List<Member> findTop3HelloBy();
+
+    @Query(name = "Member.findByUsername") //스프링 데이터 JPA는 이 애노테이션의 생략이 가능하다. 관례상 엔티티.메서드명으로 먼저 NamedQuery를 찾게 된다
+    List<Member> findByUsername(@Param("username") String username); //Spring Data JPA NamedQuery
 
     long countMemberByUsernameStartingWith(String startingWith); //parameter bound with appended %
     long countMemberByUsernameEndingWith(String endingWith); //parameter bound with prepended %

@@ -13,6 +13,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.NamedQuery;
 
 /**
  * Created by frenchline707@gmail.com on 2020-11-08
@@ -24,6 +25,10 @@ import javax.persistence.ManyToOne;
 @Getter @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @ToString(of = {"id", "username", "age"}) //연관 관계 필드인 team은 포함하지 않는 것이 좋다. 무한 루프 걸림
+@NamedQuery(
+        name = "Member.findByUsername", //관례상 "엔티티.메서드명"으로 명명
+        query = "select m from Member m where m.username = :username"
+)
 public class Member {
 
     @Id @GeneratedValue
