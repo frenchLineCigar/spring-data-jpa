@@ -1,5 +1,6 @@
 package study.datajpa.repository;
 
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Repository;
 import study.datajpa.entity.Member;
 
@@ -80,6 +81,25 @@ public class MemberJpaRepository { //순수 JPA 기반 리포지토리
         return em.createQuery("select count(m) from Member m where m.age = :age", Long.class)
                 .setParameter("age", age)
                 .getSingleResult();
+    }
+
+    //회원의 나이를 한번에 변경하는 쿼리 예제
+    public int bulkAgePlus(int age) {
+        return em.createQuery("update Member m set m.age = m.age + 1 where m.age >= :age")
+                            .setParameter("age", age)
+                            .executeUpdate();
+    }
+
+    public int bulkAgePlusX(int starting, int x) {
+        String qlString = "update Member m set m.age = m.age + :x where m.age >= :starting";
+        int resultCount = em.createQuery(qlString)
+                .setParameter("x", x)
+                .setParameter("starting", starting)
+                .executeUpdate();
+
+        em.clear(); //벌크 연산 이후 영속성 컨텍스트를 비우자
+
+        return resultCount;
     }
 
 }

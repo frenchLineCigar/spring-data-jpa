@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import study.datajpa.dto.MemberDto;
@@ -89,6 +90,18 @@ public interface MemberRepository extends JpaRepository<Member, Long> { //엔티
     List<Member> findTop3By();
     Slice<Member> findSliceTop3ByAge(int age);
     Page<Member> findPageTop3ByAge(int age, Pageable pageable);
+
+    /**
+     * 벌크 업데이트 (벌크성 수정 쿼리)
+     */
+    @Modifying(clearAutomatically = true) //벌크 연산 이후 영속성 컨텍스트를 비운다 (쿼리가 나간 이후 em.clear()을 자동으로 해준다)
+    @Query("update Member m set m.age = m.age + 1 where m.age >= :age")
+    int bulkAgePlus(@Param("age") int age);
+
+    @Modifying(clearAutomatically = true) //벌크 연산 이후 영속성 컨텍스트를 비운다 (쿼리가 나간 이후 em.clear()을 자동으로 해준다)
+    @Query("update Member m set m.age = m.age + :x where m.age >= :starting")
+    int bulkAgePlusX(@Param("starting") int starting, @Param("x") int x);
+
 
     //==기타 연습 과제==//
     long countMemberByUsernameStartingWith(String startingWith); //parameter bound with appended %
