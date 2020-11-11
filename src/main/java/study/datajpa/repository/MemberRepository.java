@@ -4,6 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -101,6 +102,34 @@ public interface MemberRepository extends JpaRepository<Member, Long> { //엔티
     @Modifying(clearAutomatically = true) //벌크 연산 이후 영속성 컨텍스트를 비운다 (쿼리가 나간 이후 em.clear()을 자동으로 해준다)
     @Query("update Member m set m.age = m.age + :x where m.age >= :starting")
     int bulkAgePlusX(@Param("starting") int starting, @Param("x") int x);
+
+    /**
+     * style 1. fetch join으로 N + 1 문제 해결 (JPA 기본 제공)
+     */
+    @Query("select m from Member m left join fetch m.team") //fetch 키워드: Member 조회 시 연관된(객체 그래프) Team도 쿼리 한번에 다 끌고 온다
+    List<Member> findMemberFetchJoin();
+
+    /**
+     * style 2. EntityGraph를 활용한 fetch join (Spring Data JPA 제공): 메서드 이름으로만 쿼리 해결 시 fetch join을 하고 싶은 경우
+     */
+    @Override
+    @EntityGraph(attributePaths = {"team"}) //연관된(객체 그래프로 탐색되는) m.team도 fetch join으로 다 끌고 온다
+    List<Member> findAll();
+
+    /**
+     * style 3. JPQL + EntityGraph : JPQL을 짰는데 fetch join만 살짝 추가하고 싶은 경우
+     */
+    @EntityGraph(attributePaths = {"team"})
+    @Query("select m from Member m")
+    List<Member> findMemberEntityGraph();
+
+    /**
+     * style 4. 엔티티에 @NamedEntityGraph를 정의해서 사용할 수도 있다 (JPA 2.2+)
+     */
+    @EntityGraph(attributePaths = {"team"})
+//    @EntityGraph("Member.team") //엔티티에 @NamedEntityGraph를 정의한 것을 사용할 수도 있다 (JPA 2.2+)
+    List<Member> findEntityGraphByUsername(@Param("username") String username);
+
 
 
     //==기타 연습 과제==//

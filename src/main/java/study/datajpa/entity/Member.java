@@ -13,6 +13,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.NamedAttributeNode;
+import javax.persistence.NamedEntityGraph;
 import javax.persistence.NamedQuery;
 
 /**
@@ -29,6 +31,7 @@ import javax.persistence.NamedQuery;
         name = "Member.findByUsername", //관례상 "엔티티.메서드명"으로 명명
         query = "select m from Member m where m.username = :username"
 )
+@NamedEntityGraph(name = "Member.team", attributeNodes = @NamedAttributeNode("team")) //이렇게 엔티티에 정의한 @NamedEntityGraph를 @EntityGraph의 값으로 사용할 수 있다 (JPA 2.2+)
 public class Member {
 
     @Id @GeneratedValue

@@ -621,6 +621,161 @@ class MemberRepositoryTest {
         assertThat(resultCount).isEqualTo(3);
     }
 
+    //지연 로딩 시, N + 1 문제
+    @Test
+    public void findMemberLazy() {
+        //given
+        //member1 -> teamA
+        //member2 -> teamB
+
+        Team teamA = new Team("teamA");
+        Team teamB = new Team("teamB");
+        teamRepository.save(teamA);
+        teamRepository.save(teamB);
+        Member member1 = new Member("member1", 10, teamA);
+        Member member2 = new Member("member2", 10, teamB);
+        memberRepository.save(member1);
+        memberRepository.save(member2);
+
+        em.flush();
+        em.clear();
+
+        //when N + 1
+        //select Member 1
+        List<Member> members = memberRepository.findAll();
+
+        //then
+        for (Member member : members) {
+            System.out.println("member = " + member.getUsername());
+            System.out.println("member.teamClass = " + member.getTeam().getClass()); //프록시 객체 : class study.datajpa.entity.Team$HibernateProxy$q1dcqgDo
+            System.out.println("member.team = " + member.getTeam().getName());
+        }
+    }
+
+    //style 1. fetch join으로 N + 1 문제 해결 (JPA 기본 제공)
+    @Test
+    public void findMemberFetchJoin() {
+        //given
+        //member1 -> teamA
+        //member2 -> teamB
+
+        Team teamA = new Team("teamA");
+        Team teamB = new Team("teamB");
+        teamRepository.save(teamA);
+        teamRepository.save(teamB);
+        Member member1 = new Member("member1", 10, teamA);
+        Member member2 = new Member("member2", 10, teamB);
+        memberRepository.save(member1);
+        memberRepository.save(member2);
+
+        em.flush();
+        em.clear();
+
+        //when FetchJoin
+        //select Member left join Team 1
+        List<Member> members = memberRepository.findMemberFetchJoin();
+
+        //then
+        for (Member member : members) {
+            System.out.println("member = " + member.getUsername());
+            System.out.println("member.teamClass = " + member.getTeam().getClass()); //진짜 객체 : class study.datajpa.entity.Team
+            System.out.println("member.team = " + member.getTeam().getName());
+        }
+    }
+
+    //style 2. @Override findAll() + @EntityGraph를 활용한 fetch join (Spring Data JPA 제공)
+    @Test
+    public void overrideFindAllEntityGraph() {
+        //given
+        //member1 -> teamA
+        //member2 -> teamB
+
+        Team teamA = new Team("teamA");
+        Team teamB = new Team("teamB");
+        teamRepository.save(teamA);
+        teamRepository.save(teamB);
+        Member member1 = new Member("member1", 10, teamA);
+        Member member2 = new Member("member2", 10, teamB);
+        memberRepository.save(member1);
+        memberRepository.save(member2);
+
+        em.flush();
+        em.clear();
+
+        //when EntityGraph
+        //select Member left join Team 1
+        List<Member> members = memberRepository.findAll(); //-> memberRepository에 재정의한 findAll()의 주석 해제 후 확인
+
+        //then
+        for (Member member : members) {
+            System.out.println("member = " + member.getUsername());
+            System.out.println("member.teamClass = " + member.getTeam().getClass()); //진짜 객체 : class study.datajpa.entity.Team
+            System.out.println("member.team = " + member.getTeam().getName());
+        }
+    }
+
+    //style 3. JPQL + EntityGraph 혼용
+    @Test
+    public void findMemberEntityGraph() {
+        //given
+        //member1 -> teamA
+        //member2 -> teamB
+
+        Team teamA = new Team("teamA");
+        Team teamB = new Team("teamB");
+        teamRepository.save(teamA);
+        teamRepository.save(teamB);
+        Member member1 = new Member("member1", 10, teamA);
+        Member member2 = new Member("member2", 10, teamB);
+        memberRepository.save(member1);
+        memberRepository.save(member2);
+
+        em.flush();
+        em.clear();
+
+        //when EntityGraph
+        //select Member left join Team 1
+        List<Member> members = memberRepository.findMemberEntityGraph();
+
+        //then
+        for (Member member : members) {
+            System.out.println("member = " + member.getUsername());
+            System.out.println("member.teamClass = " + member.getTeam().getClass()); //진짜 객체 : class study.datajpa.entity.Team
+            System.out.println("member.team = " + member.getTeam().getName());
+        }
+    }
+
+    //style 4. 엔티티에 @NamedEntityGraph를 정의해서 사용 (JPA 2.2+)
+    @Test
+    public void findEntityGraphByUsername() {
+        //given
+        //member1 -> teamA
+        //member2 -> teamB
+
+        Team teamA = new Team("teamA");
+        Team teamB = new Team("teamB");
+        teamRepository.save(teamA);
+        teamRepository.save(teamB);
+        Member member1 = new Member("member1", 10, teamA);
+        Member member2 = new Member("member1", 10, teamB);
+        memberRepository.save(member1);
+        memberRepository.save(member2);
+
+        em.flush();
+        em.clear();
+
+        //when EntityGraph
+        //select Member left join Team 1
+        List<Member> members = memberRepository.findEntityGraphByUsername("member1");
+
+        //then
+        for (Member member : members) {
+            System.out.println("member = " + member.getUsername());
+            System.out.println("member.teamClass = " + member.getTeam().getClass()); //진짜 객체 : class study.datajpa.entity.Team
+            System.out.println("member.team = " + member.getTeam().getName());
+        }
+    }
+
 
     @Test
     public void countMemberByUsernameStartingWith() {
