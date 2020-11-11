@@ -8,18 +8,16 @@ import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import study.datajpa.dto.MemberDto;
 import study.datajpa.entity.Member;
 import study.datajpa.entity.Team;
 
-import javax.persistence.NonUniqueResultException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -327,7 +325,276 @@ class MemberRepositoryTest {
         });
     }
 
+    @Test
+    public void paging_ReturnTypePage() throws Exception {
+        //given
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 10));
+        memberRepository.save(new Member("member3", 10));
+        memberRepository.save(new Member("member4", 10));
+        memberRepository.save(new Member("member5", 10));
 
+        int age = 10;
+        PageRequest pageRequest = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "username")); //페이징 조건과 정렬 조건 설정
+
+        //when
+        Page<Member> page = memberRepository.findByAge(age, pageRequest); //count 쿼리 사용
+
+        //then
+        List<Member> content = page.getContent(); //조회된 데이티
+
+        assertThat(content.size()).isEqualTo(3); //조회된 데이터 수
+        assertThat(page.getTotalElements()).isEqualTo(5); //전체 데이터 수
+        assertThat(page.getNumber()).isEqualTo(0); //현재 페이지 번호
+        assertThat(page.getTotalPages()).isEqualTo(2); //전체 페이지 번호
+        assertThat(page.isFirst()).isTrue(); //현재 페이지가 첫번째 페이지인가?
+        assertThat(page.hasNext()).isTrue(); //다음 페이지가 있는가?
+        assertThat(page.getNumberOfElements()).isEqualTo(3); //현재 페이지 데이터 수 (= 조회된 데이터 수)
+        assertThat(page.getSize()).isEqualTo(page.getPageable().getPageSize()).isEqualTo(3); //한번에 가져올 데이터 수
+    }
+
+    @Test
+    public void paging2_ReturnTypePage() {
+        //given
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 10));
+        memberRepository.save(new Member("member3", 10));
+        memberRepository.save(new Member("member4", 10));
+        memberRepository.save(new Member("member5", 10));
+
+        int age = 10;
+        PageRequest pageRequest = PageRequest.of(1, 3, Sort.by(Sort.Direction.DESC, "username")); //페이징 조건과 정렬 조건 설정
+        //PageRequest pageRequest = PageRequest.of(1, 4, Sort.by(Sort.Direction.DESC, "username")); //페이징 조건과 정렬 조건 설정
+
+        //when
+        Page<Member> page = memberRepository.findByAge(age, pageRequest); //count 쿼리 사용
+
+        //then
+        List<Member> content = page.getContent(); //조회된 데이티
+
+        assertThat(content.size()).isEqualTo(2); //조회된 데이터 수
+        assertThat(page.getTotalElements()).isEqualTo(5); //전체 데이터 수
+        assertThat(page.getNumber()).isEqualTo(1); //현재 페이지 번호
+        assertThat(page.getTotalPages()).isEqualTo(2); //전체 페이지 번호
+        assertThat(page.isFirst()).isFalse(); //현재 페이지가 첫번째 페이지인가?
+        assertThat(page.hasNext()).isFalse(); //다음 페이지가 있는가? -> False면 count 쿼리 안나감
+        assertThat(page.getNumberOfElements()).isEqualTo(2); //현재 페이지 데이터 수 (= 조회된 데이터 수)
+        assertThat(page.getSize()).isEqualTo(page.getPageable().getPageSize()).isEqualTo(3); //한번에 가져올 데이터 수
+//        assertThat(content.size()).isEqualTo(1); //조회된 데이터 수
+//        assertThat(page.getTotalElements()).isEqualTo(5); //전체 데이터 수
+//        assertThat(page.getNumber()).isEqualTo(1); //현재 페이지 번호
+//        assertThat(page.getTotalPages()).isEqualTo(2); //전체 페이지 번호
+//        assertThat(page.isFirst()).isFalse(); //현재 페이지가 첫번째 페이지인가?
+//        assertThat(page.hasNext()).isFalse(); //다음 페이지가 있는가? -> False면 count 쿼리 안나감
+//        assertThat(page.getNumberOfElements()).isEqualTo(1); //현재 페이지 데이터 수 (= 조회된 데이터 수)
+//        assertThat(page.getSize()).isEqualTo(page.getPageable().getPageSize()).isEqualTo(4); //한번에 가져올 데이터 수
+    }
+
+    @Test
+    public void pagingDto() {
+        //given
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 10));
+        memberRepository.save(new Member("member3", 10));
+        memberRepository.save(new Member("member4", 10));
+        memberRepository.save(new Member("member5", 10));
+
+        int age = 10;
+        PageRequest pageRequest = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "username"));
+
+        //when
+        Page<Member> page = memberRepository.findByAge(age, pageRequest); //count 쿼리 사용
+
+        Page<MemberDto> dtoPage = page.map(member -> new MemberDto(member.getId(), member.getUsername(), null));
+//        Page<MemberDto> dtoPage = page.map(member -> new MemberDto(member.getId(), member.getUsername(), member.getTeam().getName()));
+
+        //then
+        List<MemberDto> content = dtoPage.getContent();
+
+        assertThat(content.size()).isEqualTo(3);
+        assertThat(dtoPage.getTotalElements()).isEqualTo(5); //전체 row 수 (= totalCount)
+        assertThat(dtoPage.getNumber()).isEqualTo(0); //현재 페이지 번호
+        assertThat(dtoPage.getTotalPages()).isEqualTo(2); //전체 페이지 수
+        assertThat(dtoPage.isFirst()).isTrue(); //첫번째 페이지 여부
+        assertThat(dtoPage.hasNext()).isTrue(); //다음 페이지 유무
+        assertThat(dtoPage.getNumberOfElements()).isEqualTo(3); //현재 페이지 row 수
+        assertThat(dtoPage.getSize()).isEqualTo(dtoPage.getPageable().getPageSize()).isEqualTo(3); //한번에 가져올 row 수
+    }
+
+    @Test
+    public void paging_ReturnTypeSlice() {
+        //given
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 10));
+        memberRepository.save(new Member("member3", 10));
+        memberRepository.save(new Member("member4", 10));
+        memberRepository.save(new Member("member5", 10));
+
+        int age = 10;
+        PageRequest pageRequest = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "username"));
+
+        //when
+        Slice<Member> page = memberRepository.findSliceByAge(age, pageRequest); //count 쿼리 사용 안함
+
+        //then
+        List<Member> content = page.getContent();
+
+        assertThat(content.size()).isEqualTo(3);
+//        assertThat(page.getTotalElements()).isEqualTo(5); //슬라이스는 전체 row 수 (= totalCount)를 가져오지 X
+        assertThat(page.getNumber()).isEqualTo(0);
+//        assertThat(page.getTotalPages()).isEqualTo(2); //따라서 전체 페이지 수도 계산 X
+        assertThat(page.isFirst()).isTrue();
+        assertThat(page.hasNext()).isTrue();
+        assertThat(page.getNumberOfElements()).isEqualTo(3);
+        assertThat(page.getSize()).isEqualTo(page.getPageable().getPageSize()).isEqualTo(3);
+    }
+
+    @Test
+    public void paging_ReturnTypeList() {
+        //given
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 10));
+        memberRepository.save(new Member("member3", 10));
+        memberRepository.save(new Member("member4", 10));
+        memberRepository.save(new Member("member5", 10));
+
+        int age = 10;
+        PageRequest pageRequest = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "username"));
+
+        //when
+        List<Member> page = memberRepository.findListByAge(age, pageRequest);//count 쿼리 사용 안함
+
+        //then
+//        List<Member> content = page.getContent();
+
+//        assertThat(content.size()).isEqualTo(3);
+//        assertThat(page.getTotalElements()).isEqualTo(5);
+//        assertThat(page.getNumber()).isEqualTo(0);
+//        assertThat(page.getTotalPages()).isEqualTo(2);
+//        assertThat(page.isFirst()).isTrue();
+//        assertThat(page.hasNext()).isTrue();
+//        assertThat(page.getNumberOfElements()).isEqualTo(3);
+//        assertThat(page.getSize()).isEqualTo(page.getPageable().getPageSize()).isEqualTo(3);
+    }
+
+    @Test
+    public void pagingTop3_ReturnTypeList() {
+        //given
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 10));
+        memberRepository.save(new Member("member3", 10));
+        memberRepository.save(new Member("member4", 10));
+        memberRepository.save(new Member("member5", 10));
+
+        int age = 10;
+
+        //when
+        List<Member> content = memberRepository.findTop3By();
+//        List<Member> content = memberRepository.findTopBy();
+//        List<Member> content = memberRepository.findFirstBy();
+        for (Member member : content) {
+            System.out.println("member = " + member);
+        }
+
+        //then
+        assertThat(content.size()).isEqualTo(3);
+        assertThat(content.get(0).getUsername()).isEqualTo("member1");
+        assertThat(content.get(1).getUsername()).isEqualTo("member2");
+        assertThat(content.get(2).getUsername()).isEqualTo("member3");
+    }
+
+    @Test
+    public void pagingTop3_ReturnTypeSlice() {
+        //given
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 10));
+        memberRepository.save(new Member("member3", 10));
+        memberRepository.save(new Member("member4", 10));
+        memberRepository.save(new Member("member5", 10));
+
+        int age = 10;
+
+        //when
+        Slice<Member> page = memberRepository.findSliceTop3ByAge(age);
+
+        //then
+        List<Member> content = page.getContent();
+        for (Member member : content) {
+            System.out.println("member = " + member);
+        }
+
+        assertThat(content.size()).isEqualTo(3);
+//        assertThat(page.getTotalElements()).isEqualTo(5); //전체 row 수 (= totalCount)
+        assertThat(page.getNumber()).isEqualTo(0); //현재 페이지 번호
+//        assertThat(page.getTotalPages()).isEqualTo(2); //전체 페이지 수
+        assertThat(page.isFirst()).isTrue(); //첫번째 페이지 여부
+        assertThat(page.isLast()).isTrue(); //마지막 페이지 여부
+        assertThat(page.hasNext()).isFalse(); //다음 페이지 유무
+        assertThat(page.getNumberOfElements()).isEqualTo(3); //현재 페이지 row 수
+        assertThat(page.getSize()).isEqualTo(3); //한번에 가져올 row 수
+    }
+
+    @Test
+    public void pagingTop3_ReturnTypePage() {
+        //given
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 10));
+        memberRepository.save(new Member("member3", 10));
+        memberRepository.save(new Member("member4", 10));
+        memberRepository.save(new Member("member5", 10));
+
+        int age = 10;
+        PageRequest pageRequest = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "username"));
+
+        //when
+        Page<Member> page = memberRepository.findPageTop3ByAge(age, pageRequest);
+
+        //then
+        List<Member> content = page.getContent();
+        for (Member member : content) {
+            System.out.println("member = " + member);
+        }
+
+        assertThat(content.size()).isEqualTo(3);
+        assertThat(page.getTotalElements()).isEqualTo(5); //전체 row 수 (= totalCount)
+        assertThat(page.getNumber()).isEqualTo(0); //현재 페이지 번호
+        assertThat(page.getTotalPages()).isEqualTo(2); //전체 페이지 수
+        assertThat(page.isFirst()).isTrue(); //첫번째 페이지 여부
+        assertThat(page.isLast()).isFalse(); //마지막 페이지 여부
+        assertThat(page.hasNext()).isTrue(); //다음 페이지 유무
+        assertThat(page.getNumberOfElements()).isEqualTo(3); //현재 페이지 row 수
+        assertThat(page.getSize()).isEqualTo(3); //한번에 가져올 row 수
+    }
+
+    @Test
+    public void pagingFindMemberAllCountBy() {
+        //given
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 10));
+        memberRepository.save(new Member("member3", 10));
+        memberRepository.save(new Member("member4", 10));
+        memberRepository.save(new Member("member5", 10));
+
+        int age = 10;
+        PageRequest pageRequest = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "username"));
+
+        //when
+        Page<Member> page = memberRepository.findMemberAllCountBy(pageRequest); //count 쿼리 사용
+
+        Page<MemberDto> dtoPage = page.map(m -> new MemberDto(m.getId(), m.getUsername(), null));
+
+        //then
+        List<MemberDto> content = dtoPage.getContent();
+
+        assertThat(content.size()).isEqualTo(3);
+        assertThat(dtoPage.getTotalElements()).isEqualTo(5); //전체 row 수 (= totalCount)
+        assertThat(dtoPage.getNumber()).isEqualTo(0); //현재 페이지 번호
+        assertThat(dtoPage.getTotalPages()).isEqualTo(2); //전체 페이지 수
+        assertThat(dtoPage.isFirst()).isTrue(); //첫번째 페이지 여부
+        assertThat(dtoPage.hasNext()).isTrue(); //다음 페이지 유무
+        assertThat(dtoPage.getNumberOfElements()).isEqualTo(3); //현재 페이지 row 수
+        assertThat(dtoPage.getSize()).isEqualTo(dtoPage.getPageable().getPageSize()).isEqualTo(3); //한번에 가져올 row 수
+    }
 
     @Test
     public void countMemberByUsernameStartingWith() {

@@ -58,8 +58,37 @@ public interface MemberRepository extends JpaRepository<Member, Long> { //엔티
     Member findMemberByUsername(String username); //단건
     Optional<Member> findOptionalMemberByUsername(String username); //단건 Optional
 
+    /**
+     * 스프링 데이터 JPA 페이징과 정렬
+     * * 검색 조건: 나이가 10살
+     * * 정렬 조건: 이름으로 내림차순(desc)
+     * * 페이징 조건: 첫 번째 페이지, 페이지당 보여줄 데이터는 3건
+     */
+    @Query(value = "select m from Member m left join m.team t where m.age = :age", countQuery = "select count(m) from Member m where m.age = :age")
+    Page<Member> findByAge(@Param("age") int age, Pageable pageable); //count 쿼리 사용
 
+    Slice<Member> findSliceByAge(int age, Pageable pageable); //count 쿼리 사용 안함
 
+    List<Member> findListByAge(int age, Pageable pageable); //count 쿼리 사용 안함
+
+    //count 쿼리를 다음과 같이 분리할 수 있음
+    @Query(value = "select m from Member m", countQuery = "select count(m.username) from Member m")
+    Page<Member> findMemberAllCountBy(Pageable pageable);
+
+    //count 쿼리 분리 시, 조회 성능 비교
+    @Query(value = "select m from Member m") //1. count 쿼리 분리 X
+    Page<Member> findMemberNoConfigCountQuery(Pageable pageable);
+    @Query(value = "select m from Member m left join m.team t") //2. (left outer join) count 쿼리 분리 X
+    Page<Member> findMemberNoConfigCountQuery2(Pageable pageable);
+    @Query(value = "select m from Member m left join m.team t", countQuery = "select count(m) from Member m") //3. (left outer join) count 쿼리 분리 O
+    Page<Member> findMemberConfigCountQuery(Pageable pageable);
+
+    //Top, First 키워드를 사용하여 쿼리 메서드의 결과를 제한 할 수 있다
+    List<Member> findFirstBy();
+    List<Member> findTopBy();
+    List<Member> findTop3By();
+    Slice<Member> findSliceTop3ByAge(int age);
+    Page<Member> findPageTop3ByAge(int age, Pageable pageable);
 
     //==기타 연습 과제==//
     long countMemberByUsernameStartingWith(String startingWith); //parameter bound with appended %

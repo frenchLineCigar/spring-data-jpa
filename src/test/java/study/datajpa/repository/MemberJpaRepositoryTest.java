@@ -1,6 +1,5 @@
 package study.datajpa.repository;
 
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -11,7 +10,6 @@ import study.datajpa.entity.Member;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Created by frenchline707@gmail.com on 2020-11-08
@@ -114,7 +112,7 @@ class MemberJpaRepositoryTest {
         int limit = 3;
 
         //when
-        List<Member> members = memberJpaRepository.findByPage(age, offset, limit);
+        List<Member> members = memberJpaRepository.findByAge(age, offset, limit);
         long totalCount = memberJpaRepository.totalCount(age);
 
         //페이지 계산 공식 적용...
