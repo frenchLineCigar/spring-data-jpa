@@ -10,6 +10,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
+import org.springframework.test.annotation.Commit;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 import study.datajpa.dto.MemberDto;
@@ -516,14 +517,17 @@ class MemberRepositoryTest {
         memberRepository.save(new Member("member5", 10));
 
         int age = 10;
+        PageRequest pageRequest = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "username"));
 
         //when
-        Slice<Member> page = memberRepository.findSliceTop3ByAge(age);
-
+        Slice<Member> page = memberRepository.findTop3ByAge(age);
+        for (Member member : page) {
+            System.out.println("member <- slice = " + member);
+        }
         //then
         List<Member> content = page.getContent();
         for (Member member : content) {
-            System.out.println("member = " + member);
+            System.out.println("member <- list = " + member);
         }
 
         assertThat(content.size()).isEqualTo(3);
@@ -550,12 +554,14 @@ class MemberRepositoryTest {
         PageRequest pageRequest = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "username"));
 
         //when
-        Page<Member> page = memberRepository.findPageTop3ByAge(age, pageRequest);
-
+        Page<Member> page = memberRepository.findTop3ByAge(age, pageRequest);
+        for (Member member : page) {
+            System.out.println("member <- page = " + member);
+        }
         //then
         List<Member> content = page.getContent();
         for (Member member : content) {
-            System.out.println("member = " + member);
+            System.out.println("member <- list = " + member);
         }
 
         assertThat(content.size()).isEqualTo(3);
@@ -775,6 +781,65 @@ class MemberRepositoryTest {
             System.out.println("member.team = " + member.getTeam().getName());
         }
     }
+
+    /**
+     * JPA QueryHint
+     */
+    @Test
+    public void queryHint() {
+        //given
+        Member member1 = memberRepository.save(new Member("member1", 10));
+        em.flush();
+        em.clear();
+
+        //when
+//        Member findMember = memberRepository.findById(member1.getId()).get();
+//        Member findMember = memberRepository.findReadOnlyByUsername("member1"); //Update Query 실행 X
+        Member findMember = memberRepository.findReadOnlyById(member1.getId()); //Update Query 실행 X
+        findMember.setUsername("member2");
+
+        em.flush();
+    }
+
+    @Test
+    @Transactional(readOnly = true) //스프링 5.1 버전 이후 사용 시, @Transaction(readOnly=true)로 설정하면, 이 옵션이 엔티티 매니저까지 반영되어 @QueryHint의 readOnly까지 모두 동작
+    public void QueryHintPaging() {
+        //given
+        Member member1 = memberRepository.save(new Member("member1", 10));
+        Member member2 = memberRepository.save(new Member("member2", 10));
+        Member member3 = memberRepository.save(new Member("member3", 10));
+        Member member4 = memberRepository.save(new Member("member4", 10));
+        Member member5 = memberRepository.save(new Member("member5", 10));
+        em.flush();
+        em.clear();
+
+        PageRequest pageRequest = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "username"));
+
+        Page<Member> page = memberRepository.findReadOnlyByUsername("member1", pageRequest);
+        List<Member> content = page.getContent();
+        content.get(0).setUsername("aaaaaaaaa");
+
+        em.flush();
+    }
+
+    /**
+     * JPA Lock
+     */
+    @Test
+    public void lock() {
+        //given
+        Member member1 = new Member("member1", 10);
+        memberRepository.save(member1);
+        em.flush();
+        em.clear();
+
+        //when
+        //SELECT m.member_id, m.age, m.team_id, m.username FROM member m WHERE m.username='member1' FOR UPDATE;
+        List<Member> result = memberRepository.findLockByUsername("member1");//Update Query 실행 X
+        result.get(0).setUsername("member2");
+        em.flush();
+    }
+
 
 
     @Test

@@ -1,17 +1,23 @@
 package study.datajpa.repository;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 import study.datajpa.dto.MemberDto;
 import study.datajpa.entity.Member;
 
+import javax.persistence.LockModeType;
+import javax.persistence.QueryHint;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -89,8 +95,8 @@ public interface MemberRepository extends JpaRepository<Member, Long> { //엔티
     List<Member> findFirstBy();
     List<Member> findTopBy();
     List<Member> findTop3By();
-    Slice<Member> findSliceTop3ByAge(int age);
-    Page<Member> findPageTop3ByAge(int age, Pageable pageable);
+    Slice<Member> findTop3ByAge(int age);
+    Page<Member> findTop3ByAge(int age, Pageable pageable);
 
     /**
      * 벌크 업데이트 (벌크성 수정 쿼리)
@@ -129,6 +135,27 @@ public interface MemberRepository extends JpaRepository<Member, Long> { //엔티
     @EntityGraph(attributePaths = {"team"})
 //    @EntityGraph("Member.team") //엔티티에 @NamedEntityGraph를 정의한 것을 사용할 수도 있다 (JPA 2.2+)
     List<Member> findEntityGraphByUsername(@Param("username") String username);
+
+    /**
+     * JPA Hint & Lock
+     */
+    //JPA Hint
+    @QueryHints(value = @QueryHint(name = "org.hibernate.readOnly", value = "true")) //JPA가 Hibernate한테 위임할 수 있게 구멍을 열어놓는다
+    Member findReadOnlyByUsername(String username);
+
+    @QueryHints(value = @QueryHint(name = "org.hibernate.readOnly", value = "true")) //스냅샷 생성 X -> 변경 감지 체크 X -> 읽기 전용으로만 간주
+    Member findReadOnlyById(Long id);
+
+    //스프링 5.1 버전 이후 사용 시, @Transaction(readOnly=true)로 설정하면, 이 옵션이 엔티티 매니저까지 반영되어 @QueryHint의 readOnly까지 모두 동작
+    //@QueryHints(value = {@QueryHint(name = "org.hibernate.readOnly", value = "true")}, forCounting = true)
+    Page<Member> findReadOnlyByUsername(String username, Pageable pageable);
+
+    //JPA Lock
+    //비관적 락(PESSIMISTIC LOCK): select for update -> 방언(Dialect)에 따라서 동작 방식이 달라진다
+    //동일한 데이터를 동시에 수정할 가능성이 높다(트랜잭션의 충돌이 발생한다고 가정하고 우선적으로 락을 걸고 본다)는 비관적인 전제로 잠금을 거는 방식
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    List<Member> findLockByUsername(String username);
+
 
 
 
