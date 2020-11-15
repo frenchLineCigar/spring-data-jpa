@@ -28,7 +28,7 @@ import java.util.Optional;
  * Github : http://github.com/frenchLineCigar
  */
 
-public interface MemberRepository extends JpaRepository<Member, Long> { //엔티티 타입, 식별자(PK) 타입
+public interface MemberRepository extends JpaRepository<Member, Long>, MemberRepositoryCustom { //사용자 정의 인터페이스를 상속받는다
 
     //Query Method : 메소드 이름을 분석해서 JPQL 쿼리 실행
     List<Member> findByUsernameAndAgeGreaterThan(String username, int age);

@@ -40,6 +40,7 @@ class MemberRepositoryTest {
     @Autowired MemberRepository memberRepository;
     @Autowired TeamRepository teamRepository;
     @PersistenceContext EntityManager em;
+    @Autowired MemberQueryRepository memberQueryRepository;
 
     @Test
     public void testMember() {
@@ -840,7 +841,18 @@ class MemberRepositoryTest {
         em.flush();
     }
 
+    /**
+     * 사용자 정의 리포지토리 메서드 호출
+     */
+    @Test
+    public void callCustom() {
+        List<Member> result = memberRepository.findMemberCustom();
+    }
 
+    @Test
+    public void callCustomQueryRepository() {
+        List<Member> result = memberQueryRepository.findAllMembers();
+    }
 
     @Test
     public void countMemberByUsernameStartingWith() {
