@@ -16,6 +16,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.NamedAttributeNode;
 import javax.persistence.NamedEntityGraph;
 import javax.persistence.NamedQuery;
+import java.io.Serializable;
 
 /**
  * Created by frenchline707@gmail.com on 2020-11-08
@@ -32,7 +33,7 @@ import javax.persistence.NamedQuery;
         query = "select m from Member m where m.username = :username"
 )
 @NamedEntityGraph(name = "Member.team", attributeNodes = @NamedAttributeNode("team")) //이렇게 엔티티에 정의한 @NamedEntityGraph를 @EntityGraph의 값으로 사용할 수 있다 (JPA 2.2+)
-public class Member {
+public class Member extends BaseEntity {
 
     @Id @GeneratedValue
     @Column(name = "member_id")
