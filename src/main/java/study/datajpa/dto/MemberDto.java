@@ -1,6 +1,7 @@
 package study.datajpa.dto;
 
 import lombok.Data;
+import study.datajpa.entity.Member;
 
 /**
  * Created by frenchline707@gmail.com on 2020-11-10
@@ -19,5 +20,13 @@ public class MemberDto {
         this.id = id;
         this.username = username;
         this.teamName = teamName;
+    }
+
+    public MemberDto(Member member) {
+        this.id = member.getId();
+        this.username = member.getUsername();
+        if (member.getTeam() != null) {
+            this.teamName = member.getTeam().getName();
+        }
     }
 }
