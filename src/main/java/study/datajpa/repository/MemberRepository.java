@@ -7,6 +7,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -28,7 +29,7 @@ import java.util.Optional;
  * Github : http://github.com/frenchLineCigar
  */
 
-public interface MemberRepository extends JpaRepository<Member, Long>, MemberRepositoryCustom { //사용자 정의 인터페이스를 상속받는다
+public interface MemberRepository extends JpaRepository<Member, Long>, MemberRepositoryCustom, JpaSpecificationExecutor<Member> { //JpaSpecificationExecutor 인터페이스 상속
 
     //Query Method : 메소드 이름을 분석해서 JPQL 쿼리 실행
     List<Member> findByUsernameAndAgeGreaterThan(String username, int age);

@@ -10,6 +10,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.annotation.Commit;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
@@ -853,6 +854,32 @@ class MemberRepositoryTest {
     public void callCustomQueryRepository() {
         List<Member> result = memberQueryRepository.findAllMembers();
     }
+
+    /**
+     * Specifications (명세)
+     */
+    @Test
+    public void specBasic() {
+        //given
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+
+        Member m1 = new Member("m1", 0, teamA);
+        Member m2 = new Member("m2", 0, teamA);
+        em.persist(m1);
+        em.persist(m2);
+
+        em.flush();
+        em.clear();
+
+        //when
+        Specification<Member> spec = MemberSpec.username("m1").and(MemberSpec.teamName("teamA"));
+        List<Member> result = memberRepository.findAll(spec);//상속 받은 JpaSpecificationExecutor 인터페이스를 통해 실행된다
+
+        //then
+        assertThat(result.size()).isEqualTo(1);
+    }
+
 
     @Test
     public void countMemberByUsernameStartingWith() {
