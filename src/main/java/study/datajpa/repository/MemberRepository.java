@@ -164,6 +164,16 @@ public interface MemberRepository extends JpaRepository<Member, Long>, MemberRep
     //동적 Projection : 제네릭 타입 지정 가능
     <T> List<T> findProjectionsByUsername(@Param("username") String username, Class<T> type);
 
+    //스프링 데이터 JPA 네이티브 쿼리
+    @Query(value = "select * from member where username = ?", nativeQuery = true)
+    Member findByNativeQuery(String username);
+
+    //스프링 데이터 JPA 네이티브 쿼리 + 인터페이스 기반 Projection 활용 : 페이징 처리 가능
+    @Query(value = "select m.member_id as id, m.username, t.name as teamName " +
+            "from member m left join team t",
+            countQuery = "select count(*) as totalCount from member",
+            nativeQuery = true)
+    Page<MemberProjection> findByNativeProjection(Pageable pageable);
 
     //==기타 연습 과제==//
     long countMemberByUsernameStartingWith(String startingWith); //parameter bound with appended %

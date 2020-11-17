@@ -1,5 +1,7 @@
 package study.datajpa.repository;
 
+import org.hibernate.query.NativeQuery;
+import org.hibernate.transform.Transformers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -1009,7 +1011,7 @@ class MemberRepositoryTest {
         em.persist(teamA);
 
         Member m1 = new Member("m1", 0, teamA);
-        Member m2 = new Member("m2", 0);
+        Member m2 = new Member("m2", 0, teamA);
         em.persist(m1);
         em.persist(m2);
 
@@ -1030,6 +1032,87 @@ class MemberRepositoryTest {
         }
     }
 
+    /**
+     * 스프링 데이터 JPA NativeQuery
+     */
+    @Test
+    public void nativeQuery() {
+        //given
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+
+        Member m1 = new Member("m1", 0, teamA);
+        Member m2 = new Member("m2", 0, teamA);
+        em.persist(m1);
+        em.persist(m2);
+
+        em.flush();
+        em.clear();
+
+        //when
+        Member result = memberRepository.findByNativeQuery("m1");
+        System.out.println("result = " + result);
+    }
+
+    /**
+     * 스프링 데이터 JPA 네이티브 쿼리 + 인터페이스 기반 Projection 활용 : 페이징 처리 가능
+     */
+    @Test
+    public void nativeProjection() {
+        //given
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+
+        Member m1 = new Member("m1", 0, teamA);
+        Member m2 = new Member("m2", 0, teamA);
+        em.persist(m1);
+        em.persist(m2);
+
+        em.flush();
+        em.clear();
+
+        //when
+        Page<MemberProjection> result = memberRepository.findByNativeProjection(PageRequest.of(0, 10));
+        System.out.println("result = " + result);
+        List<MemberProjection> content = result.getContent();
+        for (MemberProjection memberProjection : content) {
+            System.out.println("memberProjection.getUsername() = " + memberProjection.getUsername());
+            System.out.println("memberProjection.getTeamName() = " + memberProjection.getTeamName());
+        }
+    }
+
+    /**
+     * 하이버네이트 기능을 직접 사용한 동적 네이티브 쿼리
+     */
+    @Test
+    public void dynamicQuery() {
+        //given
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+
+        Member m1 = new Member("m1", 0, teamA);
+        Member m2 = new Member("m2", 0, teamA);
+        em.persist(m1);
+        em.persist(m2);
+
+        em.flush();
+        em.clear();
+
+        //when
+        String sql = "select m.username as username from member m";
+
+        List<MemberDto> username = em.createNativeQuery(sql)
+                .setFirstResult(0)
+                .setMaxResults(10)
+                .unwrap(NativeQuery.class)
+                .addScalar("username")
+                .setResultTransformer(Transformers.aliasToBean(MemberDto.class))
+                .getResultList();
+
+        for (MemberDto memberDto : username) {
+            System.out.println("memberDto = " + memberDto);
+        }
+    }
 
     @Test
     public void countMemberByUsernameStartingWith() {

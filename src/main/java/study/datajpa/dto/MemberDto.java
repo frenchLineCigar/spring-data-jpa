@@ -1,6 +1,7 @@
 package study.datajpa.dto;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import study.datajpa.entity.Member;
 
 /**
@@ -10,6 +11,7 @@ import study.datajpa.entity.Member;
  */
 
 @Data
+@NoArgsConstructor
 public class MemberDto {
 
     private Long id;
