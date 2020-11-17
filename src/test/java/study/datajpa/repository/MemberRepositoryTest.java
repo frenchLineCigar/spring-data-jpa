@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -880,6 +882,40 @@ class MemberRepositoryTest {
         assertThat(result.size()).isEqualTo(1);
     }
 
+    /**
+     * Query By Example : Inner Join만 가능하고 Left Outer Join이 안되는 한계
+     */
+    @Test
+    public void queryByExample() {
+        //given
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+
+        Member m1 = new Member("m1", 0, teamA);
+        Member m2 = new Member("m2", 0);
+        em.persist(m1);
+        em.persist(m2);
+
+        em.flush();
+        em.clear();
+
+        //when
+        //Probe 생성
+        Member member = new Member("m1");
+        Team team = new Team("teamA"); //내부조인(INNER JOIN)으로 teamA 가능
+        member.setTeam(team);
+
+        //ExampleMatcher 생성, age 프로퍼티는 무시
+        ExampleMatcher matcher = ExampleMatcher.matching()
+                .withIgnorePaths("age");//age의 속성은 무시하도록 (age 필드의 타입인 int는 primitive type이므로 초기화할 때 null이 아닌 0이 where 조건에 잡히는 문제 때문에)
+
+        Example<Member> example = Example.of(member, matcher);
+
+        List<Member> result = memberRepository.findAll(example);
+
+        //then
+        assertThat(result.get(0).getUsername()).isEqualTo("m1");
+    }
 
     @Test
     public void countMemberByUsernameStartingWith() {
