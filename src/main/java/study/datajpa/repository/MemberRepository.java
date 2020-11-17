@@ -1,7 +1,6 @@
 package study.datajpa.repository;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
@@ -13,7 +12,6 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
-import org.springframework.transaction.annotation.Transactional;
 import study.datajpa.dto.MemberDto;
 import study.datajpa.entity.Member;
 
@@ -40,7 +38,7 @@ public interface MemberRepository extends JpaRepository<Member, Long>, MemberRep
 
     List<Member> findTop3HelloBy();
 
-    @Query(name = "Member.findByUsername") //스프링 데이터 JPA는 이 애노테이션의 생략이 가능하다. 관례상 엔티티.메서드명으로 먼저 NamedQuery를 찾게 된다
+    //@Query(name = "Member.findByUsername") //스프링 데이터 JPA는 이 애노테이션의 생략이 가능하다. 관례상 엔티티.메서드명으로 먼저 NamedQuery를 찾게 된다
     List<Member> findByUsername(@Param("username") String username); //Spring Data JPA NamedQuery
 
     @Query("select m from Member m where m.username = :username and m.age = :age") //@Query, 리포지토리 메소드에 쿼리 정의
@@ -157,7 +155,14 @@ public interface MemberRepository extends JpaRepository<Member, Long>, MemberRep
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     List<Member> findLockByUsername(String username);
 
+    //인터페이스 기반의 Projection
+    List<UsernameOnly> findProjectionsByUsername(@Param("username") String username);
 
+    //클래스 기반의 Projection
+    List<UsernameOnlyDto> findProjectionsDtoByUsername(@Param("username") String username);
+
+    //동적 Projection : 제네릭 타입 지정 가능
+    <T> List<T> findProjectionsByUsername(@Param("username") String username, Class<T> type);
 
 
     //==기타 연습 과제==//

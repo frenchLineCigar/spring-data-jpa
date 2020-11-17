@@ -13,7 +13,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.test.annotation.Commit;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 import study.datajpa.dto.MemberDto;
@@ -892,7 +891,7 @@ class MemberRepositoryTest {
         em.persist(teamA);
 
         Member m1 = new Member("m1", 0, teamA);
-        Member m2 = new Member("m2", 0);
+        Member m2 = new Member("m2", 0, teamA);
         em.persist(m1);
         em.persist(m2);
 
@@ -916,6 +915,121 @@ class MemberRepositoryTest {
         //then
         assertThat(result.get(0).getUsername()).isEqualTo("m1");
     }
+
+    /**
+     * 인터페이스 기반의 Projection 사용
+     * -> select m.username from member m where m.username=?
+     */
+    @Test
+    public void projections() {
+        //given
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+
+        Member m1 = new Member("m1", 0, teamA);
+        Member m2 = new Member("m2", 0, teamA);
+        em.persist(m1);
+        em.persist(m2);
+
+        em.flush();
+        em.clear();
+
+        //when
+        List<UsernameOnly> result = memberRepository.findProjectionsByUsername("m1"); //select m.username from member m where m.username='m1';
+
+        for (UsernameOnly usernameOnly : result) {
+            System.out.println("usernameOnly = " + usernameOnly); //org.springframework.data.jpa.repository.query.AbstractJpaQuery$TupleConverter$TupleBackedMap@4c8abec7
+            System.out.println("usernameOnly.getUsername() = " + usernameOnly.getUsername()); //m1
+            System.out.println("usernameOnly.getUsernameAndAge() = " + usernameOnly.getUsernameAndAge()); //m1 0
+        }
+    }
+
+    /**
+     * 클래스 기반의 Projection 사용
+     * -> select m.username from member m where m.username=?
+     */
+    @Test
+    public void projections2() {
+        //given
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+
+        Member m1 = new Member("m1", 0, teamA);
+        Member m2 = new Member("m2", 0, teamA);
+        em.persist(m1);
+        em.persist(m2);
+
+        em.flush();
+        em.clear();
+
+        //when
+        List<UsernameOnlyDto> result = memberRepository.findProjectionsDtoByUsername("m1"); //select m.username from member m where m.username='m1';
+
+        for (UsernameOnlyDto usernameOnlyDto : result) {
+            System.out.println("usernameOnlyDto = " + usernameOnlyDto); //study.datajpa.repository.UsernameOnlyDto@3fd5d679
+            System.out.println("usernameOnlyDto.getUsername() = " + usernameOnlyDto.getUsername()); //m1
+        }
+    }
+
+    /**
+     * 동적 Projection으로 제네릭 타입을 지정
+     */
+    @Test
+    public void projections3() {
+        //given
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+
+        Member m1 = new Member("m1", 0, teamA);
+        Member m2 = new Member("m2", 0, teamA);
+        em.persist(m1);
+        em.persist(m2);
+
+        em.flush();
+        em.clear();
+
+        //when
+        List<UsernameOnlyDto> result = memberRepository.findProjectionsByUsername("m1", UsernameOnlyDto.class);
+        //List<UsernameOnly> result = memberRepository.findProjectionsByUsername("m1", UsernameOnly.class);
+
+        for (UsernameOnlyDto usernameOnlyDto : result) {
+            System.out.println("usernameOnlyDto = " + usernameOnlyDto);
+            System.out.println("usernameOnlyDto.getUsername() = " + usernameOnlyDto.getUsername());
+        }
+    }
+
+    /**
+     * Projection 을 활용한 중첩 구조 처리
+     * Ex) 회원 이름(username)을 가져올 때 연관된 팀 이름 까지 조회
+     */
+    @Test
+    public void projections4() {
+        //given
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+
+        Member m1 = new Member("m1", 0, teamA);
+        Member m2 = new Member("m2", 0);
+        em.persist(m1);
+        em.persist(m2);
+
+        em.flush();
+        em.clear();
+
+        //when
+        List<NestedClosedProjections> result = memberRepository.findProjectionsByUsername("m1", NestedClosedProjections.class);
+        //List<UsernameOnly> result = memberRepository.findProjectionsByUsername("m1", UsernameOnly.class);
+
+        for (NestedClosedProjections nestedClosedProjections : result) {
+            String username = nestedClosedProjections.getUsername();
+            NestedClosedProjections.TeamInfo teamInfo = nestedClosedProjections.getTeam();
+            String teamName = nestedClosedProjections.getTeam().getName();
+            System.out.println("username = " + username);
+            System.out.println("teamInfo = " + teamInfo);
+            System.out.println("teamName = " + teamName);
+        }
+    }
+
 
     @Test
     public void countMemberByUsernameStartingWith() {
